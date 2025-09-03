@@ -45,7 +45,9 @@ func addRoles(wrangler *wrangler.Context, management *config.ManagementContext) 
 		addRule().apiGroups("management.cattle.io").resources("podsecurityadmissionconfigurationtemplates").verbs("get", "list", "watch").
 		addRule().apiGroups("rke-machine-config.cattle.io").resources("*").verbs("create").
 		addRule().apiGroups("catalog.cattle.io").resources("clusterrepos").verbs("get", "list", "watch").
-		addRule().apiGroups("rke.cattle.io").resources("etcdsnapshots").verbs("get", "list", "watch")
+		addRule().apiGroups("rke.cattle.io").resources("etcdsnapshots").verbs("get", "list", "watch").
+		addRule().apiGroups("ext.cattle.io").resources("kdmreleases").verbs("get", "list").
+		addRule().apiGroups("ext.cattle.io").resources("kdmrequests").verbs("create")
 
 	clusterCreateRole.addNamespacedRule("cattle-global-data").addRule().apiGroups("").resources("secrets").verbs("create").
 		addNamespacedRule("fleet-default").addRule().apiGroups("").resources("secrets").verbs("create")
@@ -53,7 +55,8 @@ func addRoles(wrangler *wrangler.Context, management *config.ManagementContext) 
 	rb.addRole("Manage Node Drivers", "nodedrivers-manage").
 		addRule().apiGroups("management.cattle.io").resources("nodedrivers").verbs("*")
 	rb.addRole("Manage Cluster Drivers", "kontainerdrivers-manage").
-		addRule().apiGroups("management.cattle.io").resources("kontainerdrivers").verbs("*")
+		addRule().apiGroups("management.cattle.io").resources("kontainerdrivers").verbs("*").
+		addRule().apiGroups("ext.cattle.io").resources("kdmrefreshrequests").verbs("create")
 	rb.addRole("Manage Users", "users-manage").
 		addNamespacedRule(pbkdf2.LocalUserPasswordsNamespace).addRule().apiGroups("").resources("secrets").verbs("create", "update").
 		addRule().apiGroups("ext.cattle.io").resources("groupmembershiprefreshrequests").verbs("create").
@@ -397,6 +400,8 @@ func addUserRules(role *roleBuilder) *roleBuilder {
 		addRule().apiGroups("ext.cattle.io").resources("tokens").verbs("get", "list", "watch", "create", "delete", "update", "patch").
 		addRule().apiGroups("ext.cattle.io").resources("selfusers").verbs("create").
 		addRule().apiGroups("ext.cattle.io").resources("passwordchangerequests").verbs("create").
+		addRule().apiGroups("ext.cattle.io").resources("kdmreleases").verbs("get", "list").
+		addRule().apiGroups("ext.cattle.io").resources("kdmrequests").verbs("create").
 		addRule().apiGroups("management.cattle.io").resources("principals", "roletemplates").verbs("get", "list", "watch").
 		addRule().apiGroups("management.cattle.io").resources("preferences").verbs("*").
 		addRule().apiGroups("management.cattle.io").resources("settings").verbs("get", "list", "watch").

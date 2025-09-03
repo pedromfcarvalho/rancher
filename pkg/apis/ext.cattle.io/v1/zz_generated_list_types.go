@@ -44,6 +44,74 @@ func NewGroupMembershipRefreshRequest(namespace, name string, obj GroupMembershi
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
+// KDMDistributionList is a list of KDMDistribution resources
+type KDMDistributionList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []KDMDistribution `json:"items"`
+}
+
+func NewKDMDistribution(namespace, name string, obj KDMDistribution) *KDMDistribution {
+	obj.APIVersion, obj.Kind = SchemeGroupVersion.WithKind("KDMDistribution").ToAPIVersionAndKind()
+	obj.Name = name
+	obj.Namespace = namespace
+	return &obj
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// KDMRefreshRequestList is a list of KDMRefreshRequest resources
+type KDMRefreshRequestList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []KDMRefreshRequest `json:"items"`
+}
+
+func NewKDMRefreshRequest(namespace, name string, obj KDMRefreshRequest) *KDMRefreshRequest {
+	obj.APIVersion, obj.Kind = SchemeGroupVersion.WithKind("KDMRefreshRequest").ToAPIVersionAndKind()
+	obj.Name = name
+	obj.Namespace = namespace
+	return &obj
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// KDMReleaseList is a list of KDMRelease resources
+type KDMReleaseList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []KDMRelease `json:"items"`
+}
+
+func NewKDMRelease(namespace, name string, obj KDMRelease) *KDMRelease {
+	obj.APIVersion, obj.Kind = SchemeGroupVersion.WithKind("KDMRelease").ToAPIVersionAndKind()
+	obj.Name = name
+	obj.Namespace = namespace
+	return &obj
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// KDMRequestList is a list of KDMRequest resources
+type KDMRequestList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []KDMRequest `json:"items"`
+}
+
+func NewKDMRequest(namespace, name string, obj KDMRequest) *KDMRequest {
+	obj.APIVersion, obj.Kind = SchemeGroupVersion.WithKind("KDMRequest").ToAPIVersionAndKind()
+	obj.Name = name
+	obj.Namespace = namespace
+	return &obj
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
 // KubeconfigList is a list of Kubeconfig resources
 type KubeconfigList struct {
 	metav1.TypeMeta `json:",inline"`

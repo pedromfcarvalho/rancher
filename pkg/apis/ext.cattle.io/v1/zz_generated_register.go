@@ -30,6 +30,10 @@ import (
 
 var (
 	GroupMembershipRefreshRequestResourceName = "groupmembershiprefreshrequests"
+	KDMDistributionResourceName               = "kdmdistributions"
+	KDMRefreshRequestResourceName             = "kdmrefreshrequests"
+	KDMReleaseResourceName                    = "kdmreleases"
+	KDMRequestResourceName                    = "kdmrequests"
 	KubeconfigResourceName                    = "kubeconfigs"
 	PasswordChangeRequestResourceName         = "passwordchangerequests"
 	SelfUserResourceName                      = "selfusers"
@@ -60,6 +64,14 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&GroupMembershipRefreshRequest{},
 		&GroupMembershipRefreshRequestList{},
+		&KDMDistribution{},
+		&KDMDistributionList{},
+		&KDMRefreshRequest{},
+		&KDMRefreshRequestList{},
+		&KDMRelease{},
+		&KDMReleaseList{},
+		&KDMRequest{},
+		&KDMRequestList{},
 		&Kubeconfig{},
 		&KubeconfigList{},
 		&PasswordChangeRequest{},
