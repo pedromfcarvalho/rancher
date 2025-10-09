@@ -33,17 +33,11 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.GroupMembershipRefreshRequestList":   schema_pkg_apis_extcattleio_v1_GroupMembershipRefreshRequestList(ref),
 		"github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.GroupMembershipRefreshRequestSpec":   schema_pkg_apis_extcattleio_v1_GroupMembershipRefreshRequestSpec(ref),
 		"github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.GroupMembershipRefreshRequestStatus": schema_pkg_apis_extcattleio_v1_GroupMembershipRefreshRequestStatus(ref),
-		"github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.KDMDistribution":                     schema_pkg_apis_extcattleio_v1_KDMDistribution(ref),
-		"github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.KDMDistributionList":                 schema_pkg_apis_extcattleio_v1_KDMDistributionList(ref),
-		"github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.KDMDistributionSpec":                 schema_pkg_apis_extcattleio_v1_KDMDistributionSpec(ref),
 		"github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.KDMRefreshRequest":                   schema_pkg_apis_extcattleio_v1_KDMRefreshRequest(ref),
 		"github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.KDMRefreshRequestList":               schema_pkg_apis_extcattleio_v1_KDMRefreshRequestList(ref),
 		"github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.KDMRefreshRequestSpec":               schema_pkg_apis_extcattleio_v1_KDMRefreshRequestSpec(ref),
-		"github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.KDMRelease":                          schema_pkg_apis_extcattleio_v1_KDMRelease(ref),
 		"github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.KDMReleaseChart":                     schema_pkg_apis_extcattleio_v1_KDMReleaseChart(ref),
 		"github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.KDMReleaseField":                     schema_pkg_apis_extcattleio_v1_KDMReleaseField(ref),
-		"github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.KDMReleaseList":                      schema_pkg_apis_extcattleio_v1_KDMReleaseList(ref),
-		"github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.KDMReleaseSpec":                      schema_pkg_apis_extcattleio_v1_KDMReleaseSpec(ref),
 		"github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.KDMRequest":                          schema_pkg_apis_extcattleio_v1_KDMRequest(ref),
 		"github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.KDMRequestList":                      schema_pkg_apis_extcattleio_v1_KDMRequestList(ref),
 		"github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.KDMRequestSatus":                     schema_pkg_apis_extcattleio_v1_KDMRequestSatus(ref),
@@ -285,124 +279,6 @@ func schema_pkg_apis_extcattleio_v1_GroupMembershipRefreshRequestStatus(ref comm
 	}
 }
 
-func schema_pkg_apis_extcattleio_v1_KDMDistribution(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"apiVersion": {
-						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"metadata": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Standard object metadata; More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata.",
-							Default:     map[string]interface{}{},
-							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
-						},
-					},
-					"spec": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Spec is the desired state of the PasswordChangeRequest.",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.KDMDistributionSpec"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.KDMDistributionSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
-	}
-}
-
-func schema_pkg_apis_extcattleio_v1_KDMDistributionList(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "KDMDistributionList is a list of KDMDistribution resources",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"apiVersion": {
-						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"metadata": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
-						},
-					},
-					"items": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.KDMDistribution"),
-									},
-								},
-							},
-						},
-					},
-				},
-				Required: []string{"metadata", "items"},
-			},
-		},
-		Dependencies: []string{
-			"github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.KDMDistribution", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
-	}
-}
-
-func schema_pkg_apis_extcattleio_v1_KDMDistributionSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"releases": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.Release"),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.Release"},
-	}
-}
-
 func schema_pkg_apis_extcattleio_v1_KDMRefreshRequest(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -512,48 +388,6 @@ func schema_pkg_apis_extcattleio_v1_KDMRefreshRequestSpec(ref common.ReferenceCa
 	}
 }
 
-func schema_pkg_apis_extcattleio_v1_KDMRelease(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"apiVersion": {
-						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"metadata": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Standard object metadata; More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata.",
-							Default:     map[string]interface{}{},
-							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
-						},
-					},
-					"spec": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Spec is the desired state of the PasswordChangeRequest.",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.KDMReleaseSpec"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.KDMReleaseSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
-	}
-}
-
 func schema_pkg_apis_extcattleio_v1_KDMReleaseChart(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -619,76 +453,6 @@ func schema_pkg_apis_extcattleio_v1_KDMReleaseField(ref common.ReferenceCallback
 				},
 			},
 		},
-	}
-}
-
-func schema_pkg_apis_extcattleio_v1_KDMReleaseList(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "KDMReleaseList is a list of KDMRelease resources",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"apiVersion": {
-						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"metadata": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
-						},
-					},
-					"items": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.KDMRelease"),
-									},
-								},
-							},
-						},
-					},
-				},
-				Required: []string{"metadata", "items"},
-			},
-		},
-		Dependencies: []string{
-			"github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.KDMRelease", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
-	}
-}
-
-func schema_pkg_apis_extcattleio_v1_KDMReleaseSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"Release": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.Release"),
-						},
-					},
-				},
-				Required: []string{"Release"},
-			},
-		},
-		Dependencies: []string{
-			"github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1.Release"},
 	}
 }
 

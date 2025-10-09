@@ -5,9 +5,7 @@ import (
 
 	extv1 "github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1"
 	"github.com/rancher/rancher/pkg/ext/stores/groupmembershiprefreshrequest"
-	"github.com/rancher/rancher/pkg/ext/stores/kdmdistribution"
 	"github.com/rancher/rancher/pkg/ext/stores/kdmrefreshrequest"
-	"github.com/rancher/rancher/pkg/ext/stores/kdmrelease"
 	"github.com/rancher/rancher/pkg/ext/stores/kdmrequest"
 	"github.com/rancher/rancher/pkg/ext/stores/kubeconfig"
 	"github.com/rancher/rancher/pkg/ext/stores/passwordchangerequest"
@@ -91,27 +89,11 @@ func InstallStores(
 	logrus.Infof("Successfully installed %s store", selfuser.SingularName)
 
 	err = server.Install(
-		extv1.KDMReleaseResourceName,
-		kdmrelease.GVK,
-		kdmrelease.New())
-	if err != nil {
-		return fmt.Errorf("unable to install %s store: %w", kdmrelease.SingularName, err)
-	}
-
-	err = server.Install(
 		extv1.KDMRequestResourceName,
 		kdmrequest.GVK,
 		kdmrequest.New())
 	if err != nil {
 		return fmt.Errorf("unable to install %s store: %w", kdmrequest.SingularName, err)
-	}
-
-	err = server.Install(
-		extv1.KDMDistributionResourceName,
-		kdmdistribution.GVK,
-		kdmdistribution.New())
-	if err != nil {
-		return fmt.Errorf("unable to install %s store: %w", kdmdistribution.SingularName, err)
 	}
 
 	metadataHandler := kd.MetadataController{

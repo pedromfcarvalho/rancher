@@ -1,10 +1,7 @@
 package channelserver
 
 import (
-	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -16,32 +13,17 @@ import (
 	"github.com/rancher/channelserver/pkg/config"
 	"github.com/rancher/channelserver/pkg/model"
 	"github.com/rancher/channelserver/pkg/server"
-	"github.com/rancher/lasso/pkg/log"
 	"github.com/rancher/rancher/pkg/settings"
 	"github.com/rancher/wrangler/v3/pkg/data"
 	"github.com/rancher/wrangler/v3/pkg/schemas"
 	"github.com/sirupsen/logrus"
 )
 
-type VersionedRelease struct {
-	model.Release
-	Hash string
-}
-
-type VersionedReleases struct {
-	Hash string
-	K3S  *model.ReleasesConfig
-	RKE2 *model.ReleasesConfig
-}
-
 var (
 	configs     map[string]*config.Config
 	configsInit sync.Once
 	k3sAction   chan struct{}
 	rke2Action  chan struct{}
-
-	versionedReleases   *VersionedReleases
-	versionedReleasesMu sync.Mutex
 )
 
 func GetURLAndInterval() (string, time.Duration) {
@@ -133,13 +115,6 @@ func GetReleaseConfigByRuntimeAndVersion(ctx context.Context, runtime, kubernete
 	return fallBack
 }
 
-func GetVersionedReleases() *VersionedReleases {
-	versionedReleasesMu.Lock()
-	defer versionedReleasesMu.Unlock()
-
-	return versionedReleases
-}
-
 func GetReleaseConfigByRuntime(ctx context.Context, runtime string) *config.Config {
 	configsInit.Do(func() {
 		k3sAction = make(chan struct{})
@@ -152,46 +127,6 @@ func GetReleaseConfigByRuntime(ctx context.Context, runtime string) *config.Conf
 			"k3s":  config.NewConfig(ctx, "k3s", &DynamicInterval{"k3s", k3sAction}, getChannelServerArg(), "rancher", "", urls),
 			"rke2": config.NewConfig(ctx, "rke2", &DynamicInterval{"rke2", rke2Action}, getChannelServerArg(), "rancher", "", urls),
 		}
-
-		go func() {
-			for {
-				select {
-				case <-configs["k3s"].LoadReady:
-				case <-configs["rke2"].LoadReady:
-				}
-
-				k3sReleases := configs["k3s"].ReleasesConfig()
-				rke2Releases := configs["rke2"].ReleasesConfig()
-
-				var data bytes.Buffer
-				enc := json.NewEncoder(&data)
-
-				err := enc.Encode(k3sReleases)
-				if err != nil {
-					log.Errorf("Could not encode KDM data")
-					continue
-				}
-
-				err = enc.Encode(rke2Releases)
-				if err != nil {
-					log.Errorf("Could not encode KDM data")
-					continue
-				}
-
-				hash := sha256.Sum256(data.Bytes())
-				hashString := hex.EncodeToString(hash[:])
-
-				versionedReleasesMu.Lock()
-				if versionedReleases == nil {
-					versionedReleases = &VersionedReleases{}
-				}
-
-				versionedReleases.K3S = k3sReleases
-				versionedReleases.RKE2 = rke2Releases
-				versionedReleases.Hash = hashString
-				versionedReleasesMu.Unlock()
-			}
-		}()
 	})
 	return configs[runtime]
 }

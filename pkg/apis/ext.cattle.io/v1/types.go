@@ -419,40 +419,6 @@ func (in *KDMReleaseField) DeepCopy() *KDMReleaseField {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-type KDMRelease struct {
-	metav1.TypeMeta `json:",inline"`
-	// Standard object metadata; More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata.
-	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-	// Spec is the desired state of the PasswordChangeRequest.
-	// +optional
-	Spec KDMReleaseSpec `json:"spec,omitempty"`
-}
-
-type KDMReleaseSpec struct {
-	Release
-}
-
-// +genclient
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-type KDMDistribution struct {
-	metav1.TypeMeta `json:",inline"`
-	// Standard object metadata; More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata.
-	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-	// Spec is the desired state of the PasswordChangeRequest.
-	// +optional
-	Spec KDMDistributionSpec `json:"spec,omitempty"`
-}
-
-type KDMDistributionSpec struct {
-	Releases []Release `json:"releases,omitempty"`
-}
-
-// +genclient
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
 type KDMRefreshRequest struct {
 	metav1.TypeMeta `json:",inline"`
 	// Standard object metadata; More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata.

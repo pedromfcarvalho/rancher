@@ -32,9 +32,7 @@ func init() {
 
 type Interface interface {
 	GroupMembershipRefreshRequest() GroupMembershipRefreshRequestController
-	KDMDistribution() KDMDistributionController
 	KDMRefreshRequest() KDMRefreshRequestController
-	KDMRelease() KDMReleaseController
 	KDMRequest() KDMRequestController
 	Kubeconfig() KubeconfigController
 	PasswordChangeRequest() PasswordChangeRequestController
@@ -57,16 +55,8 @@ func (v *version) GroupMembershipRefreshRequest() GroupMembershipRefreshRequestC
 	return generic.NewNonNamespacedController[*v1.GroupMembershipRefreshRequest, *v1.GroupMembershipRefreshRequestList](schema.GroupVersionKind{Group: "ext.cattle.io", Version: "v1", Kind: "GroupMembershipRefreshRequest"}, "groupmembershiprefreshrequests", v.controllerFactory)
 }
 
-func (v *version) KDMDistribution() KDMDistributionController {
-	return generic.NewController[*v1.KDMDistribution, *v1.KDMDistributionList](schema.GroupVersionKind{Group: "ext.cattle.io", Version: "v1", Kind: "KDMDistribution"}, "kdmdistributions", true, v.controllerFactory)
-}
-
 func (v *version) KDMRefreshRequest() KDMRefreshRequestController {
 	return generic.NewController[*v1.KDMRefreshRequest, *v1.KDMRefreshRequestList](schema.GroupVersionKind{Group: "ext.cattle.io", Version: "v1", Kind: "KDMRefreshRequest"}, "kdmrefreshrequests", true, v.controllerFactory)
-}
-
-func (v *version) KDMRelease() KDMReleaseController {
-	return generic.NewController[*v1.KDMRelease, *v1.KDMReleaseList](schema.GroupVersionKind{Group: "ext.cattle.io", Version: "v1", Kind: "KDMRelease"}, "kdmreleases", true, v.controllerFactory)
 }
 
 func (v *version) KDMRequest() KDMRequestController {
