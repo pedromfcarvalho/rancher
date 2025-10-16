@@ -382,6 +382,7 @@ type KDMRequest struct {
 type KDMRequestSpec struct {
 	Distribution string `json:"distribution,omitempty"`
 	Version      string `json:"version,omitempty"`
+	AllVersions  bool   `json:"allVersions,omitempty"`
 }
 
 type KDMRequestSatus struct {

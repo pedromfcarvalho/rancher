@@ -52,15 +52,28 @@ func (s *Store) Create(
 			zeroT, obj))
 	}
 
+	var k3sConfigReleases, rke2ConfigReleases []model.Release
+
+	if kdmRequest.Spec.AllVersions {
+		k3sConfigReleases = channelserver.GetReleaseConfigByRuntime(ctx, "k3s").ReleasesConfigUnfiltered().Releases
+		rke2ConfigReleases = channelserver.GetReleaseConfigByRuntime(ctx, "rke2").ReleasesConfigUnfiltered().Releases
+	} else {
+		k3sConfigReleases = channelserver.GetReleaseConfigByRuntime(ctx, "k3s").ReleasesConfig().Releases
+		rke2ConfigReleases = channelserver.GetReleaseConfigByRuntime(ctx, "rke2").ReleasesConfig().Releases
+	}
+
 	var configReleases []model.Release
 
-	if kdmRequest.Spec.Distribution != "" {
-		if kdmRequest.Spec.Distribution == "k3s" || kdmRequest.Spec.Distribution == "rke2" {
-			configReleases = channelserver.GetReleaseConfigByRuntime(context.TODO(), kdmRequest.Spec.Distribution).ReleasesConfig().Releases
-		}
-	} else {
-		configReleases = channelserver.GetReleaseConfigByRuntime(context.TODO(), "k3s").ReleasesConfig().Releases
-		configReleases = append(configReleases, channelserver.GetReleaseConfigByRuntime(context.TODO(), "rke2").ReleasesConfig().Releases...)
+	switch kdmRequest.Spec.Distribution {
+	case "k3s":
+		configReleases = k3sConfigReleases
+	case "rke2":
+		configReleases = rke2ConfigReleases
+	case "":
+		configReleases = make([]model.Release, 0, len(k3sConfigReleases)+len(rke2ConfigReleases))
+		configReleases = append(configReleases, k3sConfigReleases...)
+		configReleases = append(configReleases, rke2ConfigReleases...)
+	default:
 	}
 
 	releases := make([]ext.Release, 0, len(configReleases))

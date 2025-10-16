@@ -3,6 +3,7 @@ package channelserver
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -22,8 +23,8 @@ import (
 var (
 	configs     map[string]*config.Config
 	configsInit sync.Once
-	k3sAction   chan struct{}
-	rke2Action  chan struct{}
+	k3sAction   chan chan error
+	rke2Action  chan chan error
 )
 
 func GetURLAndInterval() (string, time.Duration) {
@@ -53,21 +54,26 @@ func getChannelServerArg() string {
 }
 
 type DynamicInterval struct {
-	subKey string
-	action chan struct{}
+	subKey   string
+	action   chan chan error
+	currChan chan error
 }
 
 func (d *DynamicInterval) Wait(ctx context.Context) bool {
 	start := time.Now()
+	d.currChan = nil
 	for {
 		select {
 		case <-time.After(time.Second):
+			// TODO we might be able to remove this logic
+			// by relying on the settings controller to
+			// trigger a refresh, and just wait for the interval.
 			_, duration := GetURLAndInterval()
 			if start.Add(duration).Before(time.Now()) {
 				return true
 			}
 			continue
-		case <-d.action:
+		case d.currChan = <-d.action:
 			logrus.Infof("getReleaseConfig: reloading config for %s", d.subKey)
 			return true
 		case <-ctx.Done():
@@ -76,17 +82,47 @@ func (d *DynamicInterval) Wait(ctx context.Context) bool {
 	}
 }
 
-func Refresh() {
-	// This was changed to prevent a deadlock in Wait above.
-	select {
-	case k3sAction <- struct{}{}:
-	default:
+func (d *DynamicInterval) Callback(err error) {
+	if d.currChan != nil {
+		select {
+		case d.currChan <- err:
+		default:
+			// This should not happen.
+			logrus.Warn("Could not send error during KDM refresh")
+		}
+	}
+}
+
+func RefreshSync(ctx context.Context) error {
+	k3sChan := make(chan error, 1)
+	rke2Chan := make(chan error, 1)
+
+	n := 0
+	for n < 2 {
+		select {
+		case k3sAction <- k3sChan:
+			n++
+		case rke2Action <- rke2Chan:
+			n++
+		case <-ctx.Done():
+			return ctx.Err()
+		}
 	}
 
-	select {
-	case rke2Action <- struct{}{}:
-	default:
+	n = 0
+	var k3sErr, rke2Err error
+	for n < 2 {
+		select {
+		case k3sErr = <-k3sChan:
+			n++
+		case rke2Err = <-rke2Chan:
+			n++
+		case <-ctx.Done():
+			return ctx.Err()
+		}
 	}
+
+	return errors.Join(k3sErr, rke2Err)
 }
 
 type DynamicSource struct{}
@@ -117,15 +153,17 @@ func GetReleaseConfigByRuntimeAndVersion(ctx context.Context, runtime, kubernete
 
 func GetReleaseConfigByRuntime(ctx context.Context, runtime string) *config.Config {
 	configsInit.Do(func() {
-		k3sAction = make(chan struct{})
-		rke2Action = make(chan struct{})
+		k3sAction = make(chan chan error, 1)
+		rke2Action = make(chan chan error, 1)
 		urls := []config.Source{
 			&DynamicSource{},
 			config.StringSource("/var/lib/rancher-data/driver-metadata/data.json"),
 		}
+		k3sDynamicInterval := &DynamicInterval{"k3s", k3sAction, nil}
+		rke2DynamicInterval := &DynamicInterval{"rke2", rke2Action, nil}
 		configs = map[string]*config.Config{
-			"k3s":  config.NewConfig(ctx, "k3s", &DynamicInterval{"k3s", k3sAction}, getChannelServerArg(), "rancher", "", urls),
-			"rke2": config.NewConfig(ctx, "rke2", &DynamicInterval{"rke2", rke2Action}, getChannelServerArg(), "rancher", "", urls),
+			"k3s":  config.NewConfigWithCallback(ctx, "k3s", k3sDynamicInterval, getChannelServerArg(), "rancher", "", urls, k3sDynamicInterval),
+			"rke2": config.NewConfigWithCallback(ctx, "rke2", rke2DynamicInterval, getChannelServerArg(), "rancher", "", urls, rke2DynamicInterval),
 		}
 	})
 	return configs[runtime]

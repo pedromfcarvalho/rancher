@@ -7,6 +7,7 @@ import (
 
 	ext "github.com/rancher/rancher/pkg/apis/ext.cattle.io/v1"
 	kd "github.com/rancher/rancher/pkg/kontainerdrivermetadata"
+	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -55,7 +56,17 @@ func (s *Store) Create(
 			zeroT, obj))
 	}
 
-	s.metadataHandler.Refresh()
+	var err error
+	if kdmRefreshRequest.Spec.Wait {
+		err = s.metadataHandler.RefreshSync(ctx)
+	} else {
+		err = s.metadataHandler.Refresh()
+	}
+
+	if err != nil {
+		logrus.Errorf("refreshing KDM from KDMRefreshRequest: %v", err)
+		return nil, apierrors.NewInternalError(fmt.Errorf("could not refresh KDM"))
+	}
 
 	return kdmRefreshRequest, nil
 }

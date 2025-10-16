@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/blang/semver"
 	v3 "github.com/rancher/rancher/pkg/apis/management.cattle.io/v3"
@@ -15,9 +16,8 @@ import (
 )
 
 type MetadataController struct {
-	Settings        mgmtcontrollers.SettingController
-	wranglerContext *wrangler.Context
-	ctx             context.Context
+	Settings mgmtcontrollers.SettingController
+	ctx      context.Context
 }
 
 type Data struct {
@@ -39,7 +39,11 @@ func (m *MetadataController) sync(_ string, setting *v3.Setting) (*v3.Setting, e
 	if setting == nil || (setting.Name != settings.RkeMetadataConfig.Name) {
 		return nil, nil
 	}
-	if err := m.Refresh(); err != nil {
+
+	ctx, cancel := context.WithTimeout(m.ctx, 5*time.Second)
+	defer cancel()
+
+	if err := m.RefreshSync(ctx); err != nil {
 		return nil, err
 	}
 	// Enqueue to update settings if data changes on next reload by the interval managed by channelserver's DynamicInterval
@@ -48,11 +52,20 @@ func (m *MetadataController) sync(_ string, setting *v3.Setting) (*v3.Setting, e
 	return setting, nil
 }
 
-func (m *MetadataController) Refresh() error {
+func (m *MetadataController) RefreshSync(ctx context.Context) error {
 	// Refreshes to sync rke2/k3s releases
-	channelserver.Refresh()
+	if err := channelserver.RefreshSync(ctx); err != nil {
+		return err
+	}
+
 	// Update settings for rke2/k3s and ui
 	return m.updateSettings(m.ctx, settings.GetRancherVersion())
+}
+
+func (m *MetadataController) Refresh() error {
+	// TODO check if this blocks (probably not)
+	m.Settings.Enqueue(settings.RkeMetadataConfig.Name)
+	return nil
 }
 
 func (m *MetadataController) updateSettings(ctx context.Context, rancherVersion string) error {

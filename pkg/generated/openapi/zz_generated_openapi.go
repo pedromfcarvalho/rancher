@@ -599,6 +599,12 @@ func schema_pkg_apis_extcattleio_v1_KDMRequestSpec(ref common.ReferenceCallback)
 							Format: "",
 						},
 					},
+					"allVersions": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
 				},
 			},
 		},
