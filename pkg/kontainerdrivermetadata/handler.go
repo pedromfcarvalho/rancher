@@ -53,7 +53,6 @@ func (m *MetadataController) sync(_ string, setting *v3.Setting) (*v3.Setting, e
 }
 
 func (m *MetadataController) RefreshSync(ctx context.Context) error {
-	// Refreshes to sync rke2/k3s releases
 	if err := channelserver.RefreshSync(ctx); err != nil {
 		return err
 	}
