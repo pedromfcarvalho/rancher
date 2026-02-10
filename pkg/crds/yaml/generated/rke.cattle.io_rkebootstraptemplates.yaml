@@ -96,6 +96,8 @@ spec:
                         description: ClusterName refers to the name of the CAPI Cluster
                           associated with this RKEBootstrap.
                         type: string
+                      userdataSecretName:
+                        type: string
                     type: object
                   status:
                     description: Status is the observed state of RKEBootstrap.

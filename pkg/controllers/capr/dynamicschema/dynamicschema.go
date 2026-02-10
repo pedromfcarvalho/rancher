@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	machineAPIGroup       = "rke-machine.cattle.io"
+	MachineAPIGroup       = "rke-machine.cattle.io"
 	MachineConfigAPIGroup = "rke-machine-config.cattle.io"
 )
 
@@ -346,7 +346,7 @@ func getMachineTemplateCRD(schemas *schemas.Schemas, sampleProps *apiextv1.JSONS
 	props.Properties["spec"].Properties["template"].Properties["spec"].Properties["common"] =
 		sampleProps.Properties["spec"].Properties["common"]
 
-	crd := getCRD(props, id, machineAPIGroup)
+	crd := getCRD(props, id, MachineAPIGroup)
 
 	crdObj, err := crd.ToCustomResourceDefinition()
 	if err != nil {
@@ -367,7 +367,7 @@ func getMachineCRD(schemas *schemas.Schemas, sampleProps *apiextv1.JSONSchemaPro
 	props.Properties["spec"].Properties["common"] = sampleProps.Properties["spec"].Properties["common"]
 	props.Properties["status"] = sampleProps.Properties["status"]
 
-	crd := getCRD(props, id, machineAPIGroup)
+	crd := getCRD(props, id, MachineAPIGroup)
 
 	crdObj, err := crd.ToCustomResourceDefinition()
 	if err != nil {

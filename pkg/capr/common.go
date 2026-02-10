@@ -83,6 +83,8 @@ const (
 
 	SecretTypeMachinePlan  = "rke.cattle.io/machine-plan"
 	SecretTypeClusterState = "rke.cattle.io/cluster-state"
+	SecretTypeBootstrap    = "rke.cattle.io/bootstrap"
+	SecretTypeUserdata     = "rke.cattle.io/userdata"
 
 	MachineTemplateClonedFromGroupVersionAnn = "rke.cattle.io/cloned-from-group-version"
 	MachineTemplateClonedFromKindAnn         = "rke.cattle.io/cloned-from-kind"
@@ -675,4 +677,28 @@ func ToOwnerReference(typeMeta metav1.TypeMeta, objectMeta metav1.ObjectMeta) me
 		Controller:         &[]bool{true}[0],
 		BlockOwnerDeletion: &[]bool{true}[0],
 	}
+}
+
+// ClusterObjectAuthorized accepts any object, and inspects the metadata.Annotations of the object for the specified annotation
+// and determines if the object has authorized the cluster to access it. It returns two booleans, the first being whether the
+// cluster is authorized to access the object and the second being whether the annotation and a corresponding value were found
+// on the object
+func ClusterObjectAuthorized(obj runtime.Object, annotation, clusterName string) (bool, bool) {
+	annotationValueFound := false
+	if obj == nil || annotation == "" || clusterName == "" {
+		return false, annotationValueFound
+	}
+	copiedObj := obj.DeepCopyObject()
+	if objMeta, err := meta.Accessor(copiedObj); err == nil && objMeta != nil {
+		authorizedClusters := strings.Split(objMeta.GetAnnotations()[annotation], ",")
+		if len(authorizedClusters) > 0 {
+			annotationValueFound = true
+		}
+		for _, authorizedCluster := range authorizedClusters {
+			if clusterName == authorizedCluster {
+				return true, annotationValueFound
+			}
+		}
+	}
+	return false, annotationValueFound
 }

@@ -30,7 +30,6 @@ import (
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -581,7 +580,7 @@ func addTaints(config map[string]interface{}, entry *planEntry, cp *rkev1.RKECon
 // by looking at the 'v2prov-secret-authorized-for-cluster' annotation and determining if it is equal to the cluster name.
 // if the cluster is authorized to use the secret, the contents of the 'credential' key are returned as a byte slice
 func retrieveClusterAuthorizedSecret(secret *v1.Secret, clusterName string) ([]byte, error) {
-	authorized, ownerFound := clusterObjectAuthorized(secret, secretmigrator.AuthorizedSecretAnnotation, clusterName)
+	authorized, ownerFound := capr.ClusterObjectAuthorized(secret, secretmigrator.AuthorizedSecretAnnotation, clusterName)
 	if !ownerFound || !authorized {
 		return nil, fmt.Errorf("the secret 'secret://%s:%s' provided within the cloud-provider-config does not belong to cluster '%s'", secret.Namespace, secret.Name, clusterName)
 	}
@@ -591,30 +590,6 @@ func retrieveClusterAuthorizedSecret(secret *v1.Secret, clusterName string) ([]b
 		return nil, fmt.Errorf("the cloud-provider-config specified a secret, but no config could be found within the secret 'secret://%s:%s'", secret.Namespace, secret.Name)
 	}
 	return secretContent, nil
-}
-
-// clusterObjectAuthorized accepts any object, and inspects the metadata.Annotations of the object for the specified annotation
-// and determines if the object has authorized the cluster to access it. It returns two booleans, the first being whether the
-// cluster is authorized to access the object and the second being whether the annotation and a corresponding value were found
-// on the object
-func clusterObjectAuthorized(obj runtime.Object, annotation, clusterName string) (bool, bool) {
-	annotationValueFound := false
-	if obj == nil || annotation == "" || clusterName == "" {
-		return false, annotationValueFound
-	}
-	copiedObj := obj.DeepCopyObject()
-	if objMeta, err := meta.Accessor(copiedObj); err == nil && objMeta != nil {
-		authorizedClusters := strings.Split(objMeta.GetAnnotations()[annotation], ",")
-		if len(authorizedClusters) > 0 {
-			annotationValueFound = true
-		}
-		for _, authorizedCluster := range authorizedClusters {
-			if clusterName == authorizedCluster {
-				return true, annotationValueFound
-			}
-		}
-	}
-	return false, annotationValueFound
 }
 
 func checkForSecretFormat(secretFieldName, configValue string) (bool, string, string, error) {
@@ -663,7 +638,7 @@ func (p *Planner) renderFiles(controlPlane *rkev1.RKEControlPlane, entry *planEn
 				if err != nil {
 					return files, fmt.Errorf("error retrieving secret %s/%s while rendering files: %v", controlPlane.Namespace, fs.Secret.Name, err)
 				}
-				if authorized, found := clusterObjectAuthorized(secret, capr.AuthorizedObjectAnnotation, controlPlane.Name); authorized && found {
+				if authorized, found := capr.ClusterObjectAuthorized(secret, capr.AuthorizedObjectAnnotation, controlPlane.Name); authorized && found {
 					for _, v := range fs.Secret.Items {
 						file := plan.File{
 							Path:    v.Path,
@@ -691,7 +666,7 @@ func (p *Planner) renderFiles(controlPlane *rkev1.RKEControlPlane, entry *planEn
 					return files, fmt.Errorf("error retrieving configmap %s/%s while rendering files: %v", controlPlane.Namespace, fs.ConfigMap.Name, err)
 				}
 				// retrieve configmap and use contents
-				if authorized, found := clusterObjectAuthorized(configmap, capr.AuthorizedObjectAnnotation, controlPlane.Name); authorized && found {
+				if authorized, found := capr.ClusterObjectAuthorized(configmap, capr.AuthorizedObjectAnnotation, controlPlane.Name); authorized && found {
 					for _, v := range fs.ConfigMap.Items {
 						file := plan.File{
 							Path:    v.Path,

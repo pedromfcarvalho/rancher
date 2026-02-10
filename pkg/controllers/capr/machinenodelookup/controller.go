@@ -9,6 +9,7 @@ import (
 	"github.com/rancher/lasso/pkg/dynamic"
 	rkev1 "github.com/rancher/rancher/pkg/apis/rke.cattle.io/v1"
 	"github.com/rancher/rancher/pkg/capr"
+	"github.com/rancher/rancher/pkg/controllers/capr/dynamicschema"
 	capicontrollers "github.com/rancher/rancher/pkg/generated/controllers/cluster.x-k8s.io/v1beta1"
 	ranchercontrollers "github.com/rancher/rancher/pkg/generated/controllers/provisioning.cattle.io/v1"
 	rkecontroller "github.com/rancher/rancher/pkg/generated/controllers/rke.cattle.io/v1"
@@ -72,12 +73,19 @@ func (h *handler) associateMachineWithNode(_ string, bootstrap *rkev1.RKEBootstr
 		return bootstrap, err
 	}
 
+	gvk := schema.FromAPIVersionAndKind(machine.Spec.InfrastructureRef.APIVersion, machine.Spec.InfrastructureRef.Kind)
+
+	/* Skip this controller when CAPR isn't the infrastructure provider. The external infrastructure provider
+	   will be responsible for setting the providerID and addresses in the infra machine.*/
+	if gvk.Group != dynamicschema.MachineAPIGroup {
+		return bootstrap, nil
+	}
+
 	if machine.Spec.ProviderID != nil && *machine.Spec.ProviderID != "" {
 		// If the machine already has its provider ID set, then we do not need to continue
 		return bootstrap, nil
 	}
 
-	gvk := schema.FromAPIVersionAndKind(machine.Spec.InfrastructureRef.APIVersion, machine.Spec.InfrastructureRef.Kind)
 	infra, err := h.dynamic.Get(gvk, machine.Namespace, machine.Spec.InfrastructureRef.Name)
 	if apierror.IsNotFound(err) {
 		return bootstrap, nil

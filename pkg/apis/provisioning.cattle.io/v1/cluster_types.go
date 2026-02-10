@@ -170,6 +170,8 @@ type RKEConfig struct {
 type RKEMachinePool struct {
 	rkev1.RKECommonNodeConfig `json:",inline"`
 
+	UserdataSecretName string `json:"userdataSecretName,omitempty"`
+
 	// Paused indicates that the machine pool is paused, preventing CAPI
 	// controllers from reconciling it.
 	// NOTE: this only applies to the corresponding generated machine

@@ -270,30 +270,33 @@ func createMachineTemplateHash(dataMap map[string]interface{}) string {
 
 func machineDeployments(cluster *rancherv1.Cluster, capiCluster *capi.Cluster, dynamic *dynamic.Controller,
 	dynamicSchema mgmtcontroller.DynamicSchemaCache, secrets v1.SecretCache) (result []runtime.Object, _ error) {
-	bootstrapName := name.SafeConcatName(cluster.Name, "bootstrap", "template")
 
 	if dynamicSchema == nil {
 		return nil, nil
 	}
 
-	if len(cluster.Spec.RKEConfig.MachinePools) > 0 {
-		result = append(result, &rkev1.RKEBootstrapTemplate{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: cluster.Namespace,
-				Name:      bootstrapName,
-				Labels: map[string]string{
-					capr.ClusterNameLabel: cluster.Name,
-				},
-			},
-			Spec: rkev1.RKEBootstrapTemplateSpec{
-				ClusterName: cluster.Name,
-				Template: rkev1.RKEBootstrap{
-					Spec: rkev1.RKEBootstrapSpec{
-						ClusterName: cluster.Name,
+	var bootstrapName string
+	if cluster.Spec.RKEConfig.InfrastructureRef.APIVersion == capr.RKEAPIVersion {
+		bootstrapName = name.SafeConcatName(cluster.Name, "bootstrap", "template")
+		if len(cluster.Spec.RKEConfig.MachinePools) > 0 {
+			result = append(result, &rkev1.RKEBootstrapTemplate{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: cluster.Namespace,
+					Name:      bootstrapName,
+					Labels: map[string]string{
+						capr.ClusterNameLabel: cluster.Name,
 					},
 				},
-			},
-		})
+				Spec: rkev1.RKEBootstrapTemplateSpec{
+					ClusterName: cluster.Name,
+					Template: rkev1.RKEBootstrap{
+						Spec: rkev1.RKEBootstrapSpec{
+							ClusterName: cluster.Name,
+						},
+					},
+				},
+			})
+		}
 	}
 
 	machinePoolNames := map[string]bool{}
@@ -377,6 +380,28 @@ func machineDeployments(cluster *rancherv1.Cluster, capiCluster *capi.Cluster, d
 		}
 		if machinePool.AutoscalingMaxSize != nil {
 			deployAnnotations[capi.AutoscalerMaxSizeAnnotation] = strconv.Itoa(int(*machinePool.AutoscalingMaxSize))
+		}
+
+		if bootstrapName == "" {
+			bootstrapName = name.SafeConcatName(cluster.Name, machinePool.Name)
+			result = append(result, &rkev1.RKEBootstrapTemplate{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: cluster.Namespace,
+					Name:      bootstrapName,
+					Labels: map[string]string{
+						capr.ClusterNameLabel: cluster.Name,
+					},
+				},
+				Spec: rkev1.RKEBootstrapTemplateSpec{
+					ClusterName: cluster.Name,
+					Template: rkev1.RKEBootstrap{
+						Spec: rkev1.RKEBootstrapSpec{
+							UserdataSecretName: machinePool.UserdataSecretName,
+							ClusterName:        cluster.Name,
+						},
+					},
+				},
+			})
 		}
 
 		machineDeployment := &capi.MachineDeployment{

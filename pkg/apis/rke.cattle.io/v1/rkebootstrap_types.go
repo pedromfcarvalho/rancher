@@ -6,6 +6,8 @@ import (
 
 // RKEBootstrapSpec defines the desired state of RKEBootstrap.
 type RKEBootstrapSpec struct {
+	UserdataSecretName string `json:"userdataSecretName,omitempty"`
+
 	// ClusterName refers to the name of the CAPI Cluster associated with this RKEBootstrap.
 	// +optional
 	ClusterName string `json:"clusterName,omitempty"`

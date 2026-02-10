@@ -1,6 +1,8 @@
 package bootstrap
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
@@ -25,6 +27,7 @@ import (
 	"github.com/rancher/wrangler/v3/pkg/name"
 	"github.com/rancher/wrangler/v3/pkg/relatedresource"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -112,7 +115,7 @@ func Register(ctx context.Context, clients *wrangler.CAPIContext) {
 	}, clients.RKE.RKEBootstrap(), clients.Core.ServiceAccount(), clients.CAPI.Machine())
 }
 
-func (h *handler) getBootstrapSecret(namespace, name string, envVars []corev1.EnvVar, machine *capi.Machine, dataDir string) (*corev1.Secret, error) {
+func (h *handler) getBootstrapSecret(namespace, name string, envVars []corev1.EnvVar, machine *capi.Machine, bootstrap *rkev1.RKEBootstrap, dataDir string) (*corev1.Secret, error) {
 	sa, err := h.serviceAccountCache.Get(namespace, name)
 	if apierrors.IsNotFound(err) {
 		return nil, nil
@@ -137,9 +140,124 @@ func (h *handler) getBootstrapSecret(namespace, name string, envVars []corev1.En
 		is = installer.WindowsInstallScript
 	}
 
-	data, err := is(context.WithValue(context.Background(), tls.InternalAPI, hasHostPort), base64.URLEncoding.EncodeToString(hash[:]), envVars, "", dataDir)
+	installScript, err := is(context.WithValue(context.Background(), tls.InternalAPI, hasHostPort), base64.URLEncoding.EncodeToString(hash[:]), envVars, "", dataDir)
 	if err != nil {
 		return nil, err
+	}
+
+	// For CAPR as the infrastructure provider, we only need to set the system agent
+	// install script in the bootstrap secret.
+	//
+	// Additional userdata is defined in the machine config and it will be merged with
+	// install script from the secret by rancher-machine.
+	if machine.Spec.InfrastructureRef.APIVersion == capr.RKEMachineAPIVersion {
+		return &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+			Data: map[string][]byte{
+				"value": installScript,
+			},
+			Type: capr.SecretTypeBootstrap,
+		}, nil
+	}
+
+	userdata := make(map[string]any)
+	var preInstallCommands []any
+	var postInstallCommands []any
+
+	// Additional userdata defined in a secret
+	if userdataSecretName := bootstrap.Spec.UserdataSecretName; userdataSecretName != "" {
+		secret, err := h.secretCache.Get(bootstrap.Namespace, userdataSecretName)
+		if err != nil {
+			return nil, fmt.Errorf("could not retrieve userdata secret %s/%s: %w",
+				bootstrap.Namespace, userdataSecretName, err)
+		}
+
+		authorized, found := capr.ClusterObjectAuthorized(secret, capr.AuthorizedObjectAnnotation, bootstrap.Spec.ClusterName)
+		if !authorized || !found {
+			return nil, fmt.Errorf("cluster %s/%s was not authorized to access secret %s/%s",
+				bootstrap.Namespace, bootstrap.Spec.ClusterName, bootstrap.Namespace, userdataSecretName)
+		}
+
+		if secret.Type != capr.SecretTypeUserdata {
+			return nil, fmt.Errorf("userdata secret %s/%s did not match expected type", bootstrap.Namespace, userdataSecretName)
+		}
+
+		secretValue, ok := secret.Data["value"]
+		if !ok {
+			return nil, fmt.Errorf("expected value key missing from secret %s/%s")
+		}
+
+		var userdataSecretValue struct {
+			Userdata            map[string]any `yaml:"userdata,omitempty"`
+			PreInstallCommands  []any          `yaml:"preInstallCommands,omitempty"`
+			PostInstallCommands []any          `yaml:"postInstallCommands,omitempty"`
+		}
+
+		err = yaml.Unmarshal(secretValue, &userdataSecretValue)
+		if err != nil {
+			return nil, fmt.Errorf("could not unmarshal userdata secret %s/%s", bootstrap.Namespace, userdataSecretName)
+		}
+
+		userdata = userdataSecretValue.Userdata
+		preInstallCommands = userdataSecretValue.PreInstallCommands
+		postInstallCommands = userdataSecretValue.PostInstallCommands
+	}
+
+	// Merge in rancher-specific userdata
+	var output bytes.Buffer
+
+	gz := gzip.NewWriter(&output)
+	if _, err = gz.Write(installScript); err != nil {
+		return nil, err
+	}
+	if err = gz.Close(); err != nil {
+		return nil, err
+	}
+
+	content := base64.StdEncoding.EncodeToString(output.Bytes())
+
+	writeFiles := []any{
+		map[string]string{
+			"content":     content,
+			"encoding":    "gzip+b64",
+			"path":        "/usr/local/custom_script/install-system-agent.sh",
+			"permissions": "0600",
+		},
+	}
+
+	if userWriteFiles, ok := userdata["write_files"]; ok {
+		userWriteFiles, ok := userWriteFiles.([]any)
+		if !ok {
+			return nil, fmt.Errorf("error parsing userdata write_files")
+		}
+		writeFiles = append(writeFiles, userWriteFiles...)
+	}
+
+	userdata["write_files"] = writeFiles
+
+	runcmd := make([]any, 0, len(preInstallCommands)+1+len(postInstallCommands))
+	runcmd = append(runcmd, preInstallCommands...)
+	runcmd = append(runcmd, "sh /usr/local/custom_script/install-system-agent.sh")
+	runcmd = append(runcmd, postInstallCommands...)
+
+	// If the user defined runcmd in arbitrary userdata without using pre/postInstallCommands,
+	// just append it to the pre/install/post runcmds.
+	if userRunCmd, ok := userdata["runcmd"]; ok {
+		userRunCmd, ok := userRunCmd.([]any)
+		if !ok {
+			return nil, fmt.Errorf("error parsing userdata runcmd")
+		}
+		runcmd = append(runcmd, userRunCmd...)
+	}
+
+	userdata["runcmd"] = runcmd
+
+	out, err := yaml.Marshal(userdata)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling userdata")
 	}
 
 	return &corev1.Secret{
@@ -148,9 +266,9 @@ func (h *handler) getBootstrapSecret(namespace, name string, envVars []corev1.En
 			Namespace: namespace,
 		},
 		Data: map[string][]byte{
-			"value": data,
+			"value": append([]byte("#cloud-config\n"), out...),
 		},
-		Type: "rke.cattle.io/bootstrap",
+		Type: capr.SecretTypeBootstrap,
 	}, nil
 }
 
@@ -282,7 +400,7 @@ func (h *handler) assignBootStrapSecret(machine *capi.Machine, bootstrap *rkev1.
 		},
 	}
 
-	bootstrapSecret, err := h.getBootstrapSecret(sa.Namespace, sa.Name, envVars, machine, dataDir)
+	bootstrapSecret, err := h.getBootstrapSecret(sa.Namespace, sa.Name, envVars, machine, bootstrap, dataDir)
 	if err != nil {
 		return nil, nil, err
 	}
